@@ -2,20 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wisdom Generator</title>
+    <title>Wisdom Loader</title>
     <style>
-        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
+        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; }
         .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; }
         body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: sans-serif; }
         .card { width: 85%; max-width: 600px; padding: 40px; background: var(--card); border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: var(--text); }
-        hr { border: 0; border-top: 1px solid var(--line); margin: 20px auto; width: 30%; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="card" id="app">
-        <div id="quote">Loading wisdom...</div>
-        <div id="gui-elements"><hr><div id="author"></div></div>
-    </div>
+    <div id="app" class="card">Loading...</div>
 
     <script>
         async function fetchQuote() {
@@ -23,25 +20,34 @@
             const params = new URLSearchParams(window.location.search);
             const gui = (params.get('gui') || 'no').toLowerCase();
 
+            // 1. AGGRESSIVE WIPE: If no GUI, remove "Loading..." immediately
+            if (gui === 'no' || params.has('help')) {
+                document.documentElement.innerHTML = ''; 
+            }
+
             try {
+                // 2. CACHE BUSTING: Append timestamp to force fresh data
+                params.set('_cachebuster', Date.now());
+                
                 const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
 
-                if (gui === 'no') {
+                if (gui === 'no' || params.has('help')) {
                     const text = await res.text();
-                    // DESTRUCTIVE WIPE: Removes all HTML/CSS/Scripts from the page
+                    // 3. TRUE PLAIN TEXT: document.write wipes all remains of HTML/Scripts
                     document.open();
-                    document.write(text); 
+                    document.write(text);
                     document.close();
                 } else {
                     const data = await res.json();
+                    const app = document.getElementById('app');
                     if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
-                    if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
-
-                    document.getElementById('quote').innerHTML = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
-                    if (data.author) document.getElementById('author').innerText = "— " + data.author;
+                    
+                    let html = `<div style="font-size:1.8rem">${data.quote.replace(/([,.;!?])\s*/g, '$1<br>')}</div>`;
+                    if (data.author) html += `<hr style="margin:20px auto; width:30%; opacity:0.2"><div style="font-style:italic">— ${data.author}</div>`;
+                    app.innerHTML = html;
                 }
             } catch (err) {
-                if (gui !== 'no') document.getElementById('quote').innerText = "Connection Error.";
+                console.error(err);
             }
         }
         fetchQuote();
