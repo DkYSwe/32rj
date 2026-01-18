@@ -2,61 +2,143 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wisdom Generator 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wisdom Generator</title>
     <script>
+        /** 
+         * 1. SILENT ROUTER & CACHE BUSTER
+         * This runs before the body is parsed to prevent "Loading" flicker in text mode.
+         */
         const urlParams = new URLSearchParams(window.location.search);
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; // YOUR /exec URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; 
         
-        // 1. RAW TEXT ROUTING (Bypasses HTML UI completely)
-        if (urlParams.get('gui') === 'no') {
-            window.location.replace(`${SCRIPT_URL}?${urlParams.toString()}`);
-        }
+        const gui = (urlParams.get('gui') || 'yes').toLowerCase();
         
-        // 2. IMMEDIATE CACHE WIPE (Prevent flicker)
-        if (urlParams.get('gui') !== 'no') {
+        // If user wants raw text or help, redirect them to the backend immediately
+        if (gui === 'no' || urlParams.has('help')) {
+            window.location.replace(`${SCRIPT_URL}?${urlParams.toString()}&t=${Date.now()}`);
+        } else {
+            // Hide the document until the GUI is ready
             document.documentElement.style.visibility = 'hidden';
         }
     </script>
     <style>
-        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
-        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; }
-        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: sans-serif; transition: 0.3s; visibility: visible !important; }
-        .card { width: 85%; max-width: 600px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
-        .quote { font-size: 1.8rem; line-height: 1.5; font-weight: 500; }
-        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
-        .author { font-size: 1.1rem; color: #666; font-style: italic; }
+        :root { 
+            --bg: #ffffff; 
+            --card: #ffffff; 
+            --text: #1a1a1a; 
+            --line: rgba(0,0,0,0.1); 
+        }
+        
+        /* colors=yes (Yellowish Theme) */
+        .color-mode { 
+            --bg: #f5f5ed; 
+            --card: #e8e8df; 
+            --text: #2c2c2c; 
+            --line: rgba(0,0,0,0.15); 
+        }
+        
+        body { 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background-color: var(--bg); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            transition: background-color 0.3s;
+            visibility: visible !important; 
+        }
+        
+        .card { 
+            width: 85%; 
+            max-width: 600px; 
+            padding: 40px; 
+            background: var(--card); 
+            border-radius: 16px; 
+            text-align: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+            color: var(--text); 
+        }
+        
+        .quote { 
+            font-size: clamp(1.2rem, 4vh, 2rem); 
+            line-height: 1.6; 
+            font-weight: 500; 
+        }
+        
+        hr { 
+            border: 0; 
+            border-top: 1px solid var(--line); 
+            margin: 30px auto; 
+            width: 35%; 
+        }
+        
+        .author { 
+            font-size: 1.1rem; 
+            color: #666; 
+            font-style: italic; 
+        }
+        
+        .error { color: #d93025; }
     </style>
 </head>
 <body>
+
     <div class="card" id="app">
-        <div class="quote" id="quote">Syncing wisdom...</div>
-        <div id="gui-elements"><hr><div class="author" id="author"></div></div>
+        <div class="quote" id="quote-target">Syncing wisdom...</div>
+        <div id="gui-elements">
+            <hr>
+            <div class="author" id="author-target"></div>
+        </div>
     </div>
 
     <script>
+        /**
+         * 2. DATA FETCHING (GUI MODE ONLY)
+         */
         async function fetchWisdom() {
             const params = new URLSearchParams(window.location.search);
-            params.set('t', Date.now()); // Aggressive cache busting
+            
+            // Aggressive cache busting for the fetch request
+            params.set('t', Date.now());
 
             try {
-                // Fetch JSON data for GUI
-                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
-                const data = await res.json();
+                // Fetch JSON from Google Backend
+                const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
+                
+                if (!response.ok) throw new Error("Network Error");
+                
+                const data = await response.json();
 
+                // Apply UI Toggles
                 if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
                 if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
 
-                // Format quote: convert newlines to <br> for HTML display
-                document.getElementById('quote').innerHTML = data.quote.replace(/\n/g, '<br>');
-                if (data.author) document.getElementById('author').innerText = "— " + data.author;
+                // Display Data
+                // Note: The backend regex uses \n for text mode. 
+                // We convert any \n to <br> for HTML display here.
+                const quoteEl = document.getElementById('quote-target');
+                quoteEl.innerHTML = data.quote.replace(/\n/g, '<br>');
                 
+                if (data.author) {
+                    document.getElementById('author-target').innerText = "— " + data.author;
+                }
+
+                // Everything is ready, show the page
                 document.documentElement.style.visibility = 'visible';
+
             } catch (err) {
-                document.getElementById('quote').innerText = "Connection Error. Check password.";
+                console.error(err);
+                document.getElementById('quote-target').innerHTML = '<span class="error">Connection Error.</span><br><small>Check password or deployment.</small>';
                 document.documentElement.style.visibility = 'visible';
             }
         }
-        fetchWisdom();
+
+        // Execute only if not in text mode (logic in <head> handles redirection for text mode)
+        if (gui !== 'no') {
+            fetchWisdom();
+        }
     </script>
 </body>
 </html>
