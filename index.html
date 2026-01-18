@@ -4,44 +4,50 @@
     <meta charset="UTF-8">
     <title>Wisdom Update 2026</title>
     <script>
-        // AGGRESSIVE CACHE & RENDER KILLER
+        // 1. AGGRESSIVE PRE-RENDER WIPE
         const urlParams = new URLSearchParams(window.location.search);
         const guiMode = (urlParams.get('gui') || 'no').toLowerCase();
+        
+        // If gui=no, stop the browser from drawing "Loading wisdom" or any HTML
         if (guiMode === 'no' || urlParams.has('help')) {
-            window.stop(); // Stops browser from drawing initial HTML
+            window.stop(); 
             document.documentElement.innerHTML = ""; 
         }
     </script>
     <style>
         :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
-        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; --line: rgba(0,0,0,0.15); }
+        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; }
         body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
-        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
-        .quote { font-size: clamp(1.2rem, 3.8vh, 2.3rem); line-height: 1.5; font-weight: 500; }
-        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
-        .author { font-size: 1.1rem; color: #666; font-style: italic; }
+        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; color: var(--text); }
+        .quote { font-size: 1.8rem; line-height: 1.5; font-weight: 500; }
+        .author { font-size: 1.1rem; color: #666; font-style: italic; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="card" id="app">
         <div class="quote" id="quote">Loading wisdom...</div>
-        <div id="gui-elements"><hr><div class="author" id="author"></div></div>
+        <div id="gui-elements"><hr style="opacity:0.2"><div class="author" id="author"></div></div>
     </div>
 
     <script>
         async function fetchQuote() {
             const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec";
             const params = new URLSearchParams(window.location.search);
-            params.set('t', Date.now()); // Aggressive cache busting
+            
+            // 2. AGGRESSIVE CACHE BUSTING
+            params.set('_', Date.now()); 
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
+                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { 
+                    cache: 'no-store', // Force no cache
+                    redirect: 'follow' 
+                });
 
                 if (guiMode === 'no' || params.has('help')) {
                     const text = await res.text();
+                    // 3. TRUE PLAIN TEXT: Destructive replace with formatted text
                     document.open();
-                    // Preserves \n formatting from backend exactly
-                    document.write(`<pre style="font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem; line-height:1.6;">${text}</pre>`);
+                    document.write(`<html><body style="margin:0;"><pre style="white-space:pre-wrap; word-wrap:break-word; padding:20px; font-family:monospace; font-size:1.2rem;">${text}</pre></body></html>`);
                     document.close();
                 } else {
                     const data = await res.json();
