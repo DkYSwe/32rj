@@ -98,42 +98,34 @@
          * 2. DATA FETCHING (GUI MODE ONLY)
          */
         async function fetchWisdom() {
-            const params = new URLSearchParams(window.location.search);
-            
-            // Aggressive cache busting for the fetch request
-            params.set('t', Date.now());
+    const params = new URLSearchParams(window.location.search);
+    params.set('t', Date.now()); 
 
-            try {
-                // Fetch JSON from Google Backend
-                const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
-                
-                if (!response.ok) throw new Error("Network Error");
-                
-                const data = await response.json();
+    try {
+        const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
+        const data = await response.json();
 
-                // Apply UI Toggles
-                if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
-                if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
+        if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
+        if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
 
-                // Display Data
-                // Note: The backend regex uses \n for text mode. 
-                // We convert any \n to <br> for HTML display here.
-                const quoteEl = document.getElementById('quote-target');
-                quoteEl.innerHTML = data.quote.replace(/\n/g, '<br>');
-                
-                if (data.author) {
-                    document.getElementById('author-target').innerText = "— " + data.author;
-                }
-
-                // Everything is ready, show the page
-                document.documentElement.style.visibility = 'visible';
-
-            } catch (err) {
-                console.error(err);
-                document.getElementById('quote-target').innerHTML = '<span class="error">Connection Error.</span><br><small>Check password or deployment.</small>';
-                document.documentElement.style.visibility = 'visible';
-            }
+        /**
+         * BUG FIX: GUI Format
+         * Adds a <br> after: , . ; ! : -
+         */
+        const formattedQuote = data.quote.replace(/([,.;!:-])\s*/g, '$1<br>');
+        document.getElementById('quote-target').innerHTML = formattedQuote;
+        
+        if (data.author) {
+            document.getElementById('author-target').innerText = "— " + data.author;
         }
+
+        document.documentElement.style.visibility = 'visible';
+
+    } catch (err) {
+        document.getElementById('quote-target').innerHTML = '<span class="error">Connection Error.</span>';
+        document.documentElement.style.visibility = 'visible';
+    }
+}
 
         // Execute only if not in text mode (logic in <head> handles redirection for text mode)
         if (gui !== 'no') {
