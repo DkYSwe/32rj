@@ -16,7 +16,7 @@
 </head>
 <body>
     <div class="card" id="app">
-        <div class="quote" id="quote">Loading...</div>
+        <div class="quote" id="quote">Loading wisdom...</div>
         <div id="gui-elements">
             <hr>
             <div class="author" id="author"></div>
@@ -25,9 +25,12 @@
 
     <script>
         async function fetchQuote() {
+            // PASTE YOUR NEW /exec URL HERE
             const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; 
             const params = new URLSearchParams(window.location.search);
-            const guiMode = (params.get('gui') || 'no').toLowerCase(); // Use local default
+            
+            // Local defaults to match backend
+            const guiMode = (params.get('gui') || 'no').toLowerCase();
 
             try {
                 const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
@@ -35,10 +38,11 @@
                 // 1. CLEAN TEXT OUTPUT (gui=no)
                 if (guiMode === 'no') {
                     const rawText = await response.text();
-                    // Completely replace the page with raw text content
-                    document.open();
-                    document.write(`<pre style="font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem;">${rawText}</pre>`);
-                    document.close();
+                    document.body.innerHTML = ''; // Wipe all HTML
+                    const pre = document.createElement('pre');
+                    pre.style = "font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem;";
+                    pre.textContent = rawText;
+                    document.body.appendChild(pre);
                     return;
                 }
 
