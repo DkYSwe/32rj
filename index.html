@@ -1,29 +1,29 @@
 async function fetchQuote() {
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; 
     const params = new URLSearchParams(window.location.search);
-    const isTextOnly = params.get('gui') === 'no'; // updated check for gui=no
+    const isTextMode = params.get('gui') === 'no';
     const showAuthor = params.get('author') !== 'no';
 
-    if (isTextOnly) {
-        document.getElementById('app').style.display = 'none';
-        document.body.innerHTML = ''; 
+    // 1. Immediate UI Setup
+    if (isTextMode) {
+        document.body.innerHTML = ''; // Prevent "Loading wisdom" flash
     } else {
         if (params.get('colors') === 'no') document.body.classList.add('bw-mode');
         else if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
-        
-        if (!showAuthor) {
-            document.getElementById('gui-elements').style.display = 'none';
-        }
+        if (!showAuthor) document.getElementById('gui-elements').style.display = 'none';
     }
 
     try {
-        const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: "follow" });
+        const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { 
+            method: 'GET',
+            redirect: 'follow' 
+        });
 
-        if (isTextOnly) {
+        if (isTextMode) {
             const rawText = await response.text();
             document.open();
-            // Preserve newlines from backend using <pre>
-            document.write(`<pre style="font-family: monospace; white-space: pre-wrap; padding: 20px;">${rawText}</pre>`);
+            // Using <pre> ensures the browser respects the newlines (\n) sent by Google
+            document.write(`<pre style="font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem;">${rawText}</pre>`);
             document.close();
             return;
         }
@@ -32,10 +32,12 @@ async function fetchQuote() {
         if (data.error) {
             document.getElementById('quote').innerHTML = `<span style="color:red">${data.error}</span>`;
         } else {
+            // GUI Mode: Standard punctuation line breaks via <br>
             document.getElementById('quote').innerHTML = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
             if (data.author) document.getElementById('author').innerText = "— " + data.author;
         }
     } catch (err) {
-        if (!isTextOnly) document.getElementById('quote').innerText = "Connection Error.";
+        if (!isTextMode) document.getElementById('quote').innerText = "Connection Error.";
     }
 }
+fetchQuote();
