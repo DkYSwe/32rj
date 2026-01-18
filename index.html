@@ -27,6 +27,9 @@
         async function fetchQuote() {
             // 1. SETTINGS
             const SCRIPT_URL = "AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg"; // Paste your /exec URL here
+            const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, {
+            redirect: "follow" 
+            });
             const params = new URLSearchParams(window.location.search);
             
             // 2. APPLY THEME (Colors argument)
