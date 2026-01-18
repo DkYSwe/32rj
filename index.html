@@ -2,55 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wisdom Update 2026</title>
+    <title>Wisdom Generator 2026</title>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; // YOUR /exec URL
+        
+        // 1. RAW TEXT ROUTING (Bypasses HTML UI completely)
+        if (urlParams.get('gui') === 'no') {
+            window.location.replace(`${SCRIPT_URL}?${urlParams.toString()}`);
+        }
+        
+        // 2. IMMEDIATE CACHE WIPE (Prevent flicker)
+        if (urlParams.get('gui') !== 'no') {
+            document.documentElement.style.visibility = 'hidden';
+        }
+    </script>
     <style>
         :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
         .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; }
-        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: sans-serif; }
-        .card { width: 85%; max-width: 600px; padding: 40px; background: var(--card); border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: var(--text); }
-        hr { border: 0; border-top: 1px solid var(--line); margin: 20px auto; width: 30%; }
-        .author { font-style: italic; color: #666; }
+        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: sans-serif; transition: 0.3s; visibility: visible !important; }
+        .card { width: 85%; max-width: 600px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
+        .quote { font-size: 1.8rem; line-height: 1.5; font-weight: 500; }
+        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
+        .author { font-size: 1.1rem; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
-    <div id="app" class="card">
-        <div id="quote">Loading...</div>
-        <div id="gui-elements"><hr><div id="author" class="author"></div></div>
+    <div class="card" id="app">
+        <div class="quote" id="quote">Syncing wisdom...</div>
+        <div id="gui-elements"><hr><div class="author" id="author"></div></div>
     </div>
 
     <script>
-        async function fetchQuote() {
-            // Point this to your Google Script /exec URL
-            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec?pass=wmpJ3rj092383fjwFoOrjfFQj&gui=yes&quotes=tolle&colors=yes";
+        async function fetchWisdom() {
             const params = new URLSearchParams(window.location.search);
-            
-            // Force gui=no for the background fetch to get clean text
-            params.set('gui', 'no');
-            params.set('t', Date.now()); // Cache busting
+            params.set('t', Date.now()); // Aggressive cache busting
 
             try {
+                // Fetch JSON data for GUI
                 const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
-                const rawText = await res.text();
+                const data = await res.json();
 
-                // 1. Theme and UI logic
                 if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
                 if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
 
-                // 2. Fix <br> tags: 
-                // We split the raw text by the double newline used as a separator
-                const parts = rawText.split('\n\n');
-                const quote = parts[0];
-                const author = parts[1] || "";
-
-                // Convert actual newlines in quote to <br> for HTML display
-                document.getElementById('quote').innerHTML = quote.replace(/\n/g, '<br>');
-                if (author) document.getElementById('author').innerText = "— " + author;
-
+                // Format quote: convert newlines to <br> for HTML display
+                document.getElementById('quote').innerHTML = data.quote.replace(/\n/g, '<br>');
+                if (data.author) document.getElementById('author').innerText = "— " + data.author;
+                
+                document.documentElement.style.visibility = 'visible';
             } catch (err) {
-                document.getElementById('quote').innerText = "Connection Error.";
+                document.getElementById('quote').innerText = "Connection Error. Check password.";
+                document.documentElement.style.visibility = 'visible';
             }
         }
-        fetchQuote();
+        fetchWisdom();
     </script>
 </body>
 </html>
