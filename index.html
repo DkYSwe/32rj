@@ -3,17 +3,24 @@
 <head>
     <title>Redirecting...</title>
     <script>
-        // This script strips out /u/0/ and other account indexes
         (function() {
-            var scriptId = "AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg"; // Put your actual Script ID here
+            var scriptId = "AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg";
             var baseUrl = "https://script.google.com/macros/s/" + scriptId + "/exec";
             
-            // Capture any existing parameters (pass, gui, quotes, etc.)
-            var currentParams = window.location.search;
+            // Get existing parameters from the URL
+            var urlParams = new URLSearchParams(window.location.search);
             
-            // Redirect to the clean URL
-            window.location.replace(baseUrl + currentParams);
+            // FORCE the browser to use the primary session or a specific one
+            // This prevents the "Sorry, unable to open..." error by defining the session
+            if (!urlParams.has('authuser')) {
+                urlParams.set('authuser', '0'); 
+            }
+            
+            window.location.replace(baseUrl + "?" + urlParams.toString());
         })();
     </script>
 </head>
 <body>
+    <p>Loading Wisdom Update...</p>
+</body>
+</html>
