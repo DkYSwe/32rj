@@ -2,66 +2,51 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wisdom Update 2026</title>
+    <title>Wisdom Loader</title>
     <script>
-        // 1. AGGRESSIVE PRE-RENDER WIPE
+        // AGGRESSIVE PRE-RENDER KILLER
         const urlParams = new URLSearchParams(window.location.search);
-        const guiMode = (urlParams.get('gui') || 'no').toLowerCase();
+        const gui = (urlParams.get('gui') || 'no').toLowerCase();
         
-        // If gui=no, stop the browser from drawing "Loading wisdom" or any HTML
-        if (guiMode === 'no' || urlParams.has('help')) {
-            window.stop(); 
-            document.documentElement.innerHTML = ""; 
+        // If help is requested, just redirect immediately
+        if (urlParams.has('help')) {
+            const SCRIPT_URL = "YOUR_NEW_DEPLOY_URL_HERE";
+            window.location.replace(`${SCRIPT_URL}?${urlParams.toString()}`);
+        }
+        
+        // If gui=no, redirect immediately to Google's raw text service
+        if (gui === 'no') {
+            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec";
+            window.location.replace(`${SCRIPT_URL}?${urlParams.toString()}`);
         }
     </script>
-    <style>
-        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
-        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; }
-        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
-        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; color: var(--text); }
-        .quote { font-size: 1.8rem; line-height: 1.5; font-weight: 500; }
-        .author { font-size: 1.1rem; color: #666; font-style: italic; margin-top: 20px; }
-    </style>
 </head>
-<body>
-    <div class="card" id="app">
-        <div class="quote" id="quote">Loading wisdom...</div>
-        <div id="gui-elements"><hr style="opacity:0.2"><div class="author" id="author"></div></div>
-    </div>
+<body style="margin:0; font-family:sans-serif;">
+    <div id="app" style="text-align:center; padding:50px;">Loading wisdom...</div>
 
     <script>
+        // This part only runs if gui=yes
         async function fetchQuote() {
-            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec";
+            const SCRIPT_URL = "YOUR_NEW_DEPLOY_URL_HERE";
             const params = new URLSearchParams(window.location.search);
-            
-            // 2. AGGRESSIVE CACHE BUSTING
-            params.set('_', Date.now()); 
+            params.set('t', Date.now()); // Aggressive cache busting
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { 
-                    cache: 'no-store', // Force no cache
-                    redirect: 'follow' 
-                });
-
-                if (guiMode === 'no' || params.has('help')) {
-                    const text = await res.text();
-                    // 3. TRUE PLAIN TEXT: Destructive replace with formatted text
-                    document.open();
-                    document.write(`<html><body style="margin:0;"><pre style="white-space:pre-wrap; word-wrap:break-word; padding:20px; font-family:monospace; font-size:1.2rem;">${text}</pre></body></html>`);
-                    document.close();
-                } else {
-                    const data = await res.json();
-                    if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
-                    if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
-
-                    document.getElementById('quote').innerHTML = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
-                    if (data.author) document.getElementById('author').innerText = "— " + data.author;
+                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
+                const data = await res.json();
+                
+                if (params.get('colors') === 'yes') document.body.style.backgroundColor = "#f5f5ed";
+                
+                let content = `<div style="font-size:1.8rem;">${data.quote.replace(/([,.;!?])\s*/g, '$1<br>')}</div>`;
+                if (data.author && params.get('author') !== 'no') {
+                    content += `<hr style="margin:20px auto; width:30%; opacity:0.2;"><div style="font-style:italic;">— ${data.author}</div>`;
                 }
+                document.getElementById('app').innerHTML = content;
             } catch (err) {
-                if (guiMode !== 'no') document.getElementById('quote').innerText = "Connection Error.";
+                document.getElementById('app').innerText = "Connection Error.";
             }
         }
-        fetchQuote();
+        if (gui === 'yes') fetchQuote();
     </script>
 </body>
 </html>
