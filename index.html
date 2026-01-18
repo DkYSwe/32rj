@@ -2,55 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wisdom Update</title>
+    <title>Wisdom Generator</title>
     <style>
-        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --sub: #666666; --line: rgba(0,0,0,0.1); }
-        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; --sub: #555555; --line: rgba(0,0,0,0.15); }
-        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; }
-        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
-        .quote { font-size: clamp(1.2rem, 3.8vh, 2.3rem); line-height: 1.5; font-weight: 500; }
-        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
-        .author { font-size: 1.1rem; color: var(--sub); font-style: italic; }
+        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
+        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; }
+        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: sans-serif; }
+        .card { width: 85%; max-width: 600px; padding: 40px; background: var(--card); border-radius: 12px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); color: var(--text); }
+        hr { border: 0; border-top: 1px solid var(--line); margin: 20px auto; width: 30%; }
     </style>
 </head>
 <body>
     <div class="card" id="app">
-        <div class="quote" id="quote">Loading wisdom...</div>
-        <div id="gui-elements">
-            <hr>
-            <div class="author" id="author"></div>
-        </div>
+        <div id="quote">Loading wisdom...</div>
+        <div id="gui-elements"><hr><div id="author"></div></div>
     </div>
 
     <script>
         async function fetchQuote() {
-            // PASTE YOUR NEW /exec URL HERE
             const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; 
             const params = new URLSearchParams(window.location.search);
-            
-            // Local defaults to match backend
-            const guiMode = (params.get('gui') || 'no').toLowerCase();
+            const gui = (params.get('gui') || 'no').toLowerCase();
 
             try {
-                const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
+                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
 
-                // 1. CLEAN TEXT OUTPUT (gui=no)
-                if (guiMode === 'no') {
-                    const rawText = await response.text();
-                    document.body.innerHTML = ''; // Wipe all HTML
-                    const pre = document.createElement('pre');
-                    pre.style = "font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem;";
-                    pre.textContent = rawText;
-                    document.body.appendChild(pre);
-                    return;
-                }
-
-                // 2. GUI OUTPUT (gui=yes)
-                const data = await response.json();
-                if (data.error) {
-                    document.getElementById('quote').innerText = data.error;
+                if (gui === 'no') {
+                    const text = await res.text();
+                    // DESTRUCTIVE WIPE: Removes all HTML/CSS/Scripts from the page
+                    document.open();
+                    document.write(text); 
+                    document.close();
                 } else {
+                    const data = await res.json();
                     if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
                     if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
 
@@ -58,7 +41,7 @@
                     if (data.author) document.getElementById('author').innerText = "— " + data.author;
                 }
             } catch (err) {
-                if (guiMode !== 'no') document.getElementById('quote').innerText = "Connection Error.";
+                if (gui !== 'no') document.getElementById('quote').innerText = "Connection Error.";
             }
         }
         fetchQuote();
