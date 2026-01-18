@@ -4,19 +4,17 @@
     <title>Redirecting...</title>
     <script>
         (function() {
+            // Your Script ID
             var scriptId = "AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg";
-            var baseUrl = "https://script.google.com/macros/s/" + scriptId + "/exec";
             
-            // Get existing parameters from the URL
-            var urlParams = new URLSearchParams(window.location.search);
+            // THE FIX: Use the /a/*/ path instead of the standard path
+            var baseUrl = "https://script.google.com" + scriptId + "/exec";
             
-            // FORCE the browser to use the primary session or a specific one
-            // This prevents the "Sorry, unable to open..." error by defining the session
-            if (!urlParams.has('authuser')) {
-                urlParams.set('authuser', '0'); 
-            }
+            // Capture all current parameters (?pass=...&quotes=...)
+            var currentParams = window.location.search || "";
             
-            window.location.replace(baseUrl + "?" + urlParams.toString());
+            // Redirect to the account-agnostic URL
+            window.location.replace(baseUrl + currentParams);
         })();
     </script>
 </head>
