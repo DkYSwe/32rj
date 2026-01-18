@@ -1,68 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wisdom Update</title>
-    <style>
-        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --sub: #666666; --line: rgba(0,0,0,0.1); }
-        .bw-mode { --bg: #ffffff; --card: #ffffff; --text: #000000; --sub: #000000; --line: #000000; }
-        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; --sub: #555555; --line: rgba(0,0,0,0.15); }
-        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
-        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
-        .quote { font-size: clamp(1.2rem, 3.8vh, 2.3rem); line-height: 1.5; font-weight: 500; }
-        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
-        .author { font-size: 1.1rem; color: var(--sub); font-style: italic; }
-        .raw-text { font-family: monospace; white-space: pre-wrap; padding: 20px; font-size: 1.2rem; align-self: flex-start; margin: 0; }
-    </style>
-</head>
-<body>
-    <div class="card" id="app">
-        <div class="quote" id="quote">Loading wisdom...</div>
-        <div id="gui-elements">
-            <hr>
-            <div class="author" id="author"></div>
-        </div>
-    </div>
+async function fetchQuote() {
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; 
+    const params = new URLSearchParams(window.location.search);
+    
+    // 1. Set Local Defaults for Frontend Logic
+    const guiParam = params.get('gui') || 'text'; // Default to text
+    const isTextMode = guiParam === 'text';
 
-    <script>
-        async function fetchQuote() {
-            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec";
-            const params = new URLSearchParams(window.location.search);
-            const isTextMode = params.get('gui') === 'no';
+    try {
+        const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { 
+            method: 'GET',
+            redirect: 'follow' 
+        });
 
-            try {
-                const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: "follow" });
-
-                if (isTextMode) {
-                    const rawText = await response.text();
-                    // Replace whole body with a single <pre> element
-                    document.body.innerHTML = ''; 
-                    const pre = document.createElement('pre');
-                    pre.className = 'raw-text';
-                    pre.textContent = rawText;
-                    document.body.appendChild(pre);
-                    return;
-                }
-
-                // GUI Mode
-                const data = await response.json();
-                if (data.error) {
-                    document.getElementById('quote').innerText = data.error;
-                } else {
-                    // Theme/GUI setup
-                    if (params.get('colors') === 'no') document.body.classList.add('bw-mode');
-                    if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
-                    if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
-
-                    document.getElementById('quote').innerHTML = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
-                    if (data.author) document.getElementById('author').innerText = "— " + data.author;
-                }
-            } catch (err) {
-                document.getElementById('quote').innerText = "Connection Error.";
-            }
+        // 2. COMPLETE TEXT OUTPUT
+        if (isTextMode) {
+            const rawText = await response.text();
+            // Completely wipe document and write only the raw text
+            document.open();
+            document.write(`<pre style="font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem; line-height:1.6;">${rawText}</pre>`);
+            document.close();
+            return;
         }
-        fetchQuote();
-    </script>
-</body>
-</html>
+
+        // 3. GUI OUTPUT (gui=yes)
+        const data = await response.json();
+        if (data.error) {
+            document.getElementById('quote').innerHTML = `<span style="color:red">${data.error}</span>`;
+        } else {
+            // Apply colors and visibility settings
+            if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
+            if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
+
+            document.getElementById('quote').innerHTML = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
+            if (data.author) document.getElementById('author').innerText = "— " + data.author;
+        }
+    } catch (err) {
+        if (!isTextMode) document.getElementById('quote').innerText = "Connection Error.";
+    }
+}
+fetchQuote()
