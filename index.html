@@ -8,16 +8,15 @@
         :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --sub: #666666; --line: rgba(0,0,0,0.1); }
         .bw-mode { --bg: #ffffff; --card: #ffffff; --text: #000000; --sub: #000000; --line: #000000; }
         .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; --sub: #555555; --line: rgba(0,0,0,0.15); }
-        
         body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; }
-        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
+        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .quote { font-size: clamp(1.2rem, 3.8vh, 2.3rem); line-height: 1.5; font-weight: 500; }
         hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
         .author { font-size: 1.1rem; color: var(--sub); font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="card" id="app">
+    <div id="app" class="card">
         <div class="quote" id="quote">Loading wisdom...</div>
         <div id="gui-elements">
             <hr>
@@ -29,10 +28,14 @@
         async function fetchQuote() {
             const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec"; 
             const params = new URLSearchParams(window.location.search);
-            const isRaw = params.get('gui') === 'no';
+            const isTextOnly = params.get('gui') === 'text';
 
-            // Apply theme if not in raw mode
-            if (!isRaw) {
+            // Immediate Action: If text mode, remove "Loading wisdom..." text immediately
+            if (isTextOnly) {
+                document.getElementById('app').style.display = 'none';
+                document.body.innerHTML = ''; 
+            } else {
+                // Apply theme only if in GUI mode
                 if (params.get('colors') === 'no') document.body.classList.add('bw-mode');
                 else if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
             }
@@ -40,11 +43,11 @@
             try {
                 const response = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: "follow" });
 
-                if (isRaw) {
-                    const text = await response.text();
-                    // COMPLETELY replace document with raw text for a true 'text/plain' experience
+                if (isTextOnly) {
+                    const rawText = await response.text();
+                    // Wipe the entire document and write only the raw text
                     document.open();
-                    document.write(text);
+                    document.write(rawText);
                     document.close();
                     return;
                 }
@@ -57,7 +60,7 @@
                     document.getElementById('author').innerText = "— " + data.author;
                 }
             } catch (err) {
-                document.getElementById('quote').innerText = "Connection Error.";
+                if (!isTextOnly) document.getElementById('quote').innerText = "Connection Error.";
             }
         }
         fetchQuote();
