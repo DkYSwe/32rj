@@ -1,24 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Redirecting...</title>
-    <script>
-        (function() {
-            // Your Script ID
-            var scriptId = "AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg";
-            
-            // THE FIX: Use the /a/*/ path instead of the standard path
-            var baseUrl = "https://script.google.com" + scriptId + "/exec";
-            
-            // Capture all current parameters (?pass=...&quotes=...)
-            var currentParams = window.location.search || "";
-            
-            // Redirect to the account-agnostic URL
-            window.location.replace(baseUrl + currentParams);
-        })();
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wisdom Update</title>
+    <style>
+        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --sub: #666666; --line: rgba(0,0,0,0.1); }
+        .dark-mode { --bg: #f2eee0; --card: #2c313c; --text: #f7f7f7; --sub: #a0aab4; --line: rgba(255,255,255,0.15); }
+        
+        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.1); color: var(--text); }
+        .quote { font-size: clamp(1.2rem, 3.8vh, 2.3rem); line-height: 1.5; font-weight: 500; }
+        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
+        .author { font-size: 1.1rem; color: var(--sub); font-style: italic; }
+        .error { color: #ff4444; }
+    </style>
 </head>
 <body>
-    <p>Loading Wisdom Update...</p>
+    <div class="card" id="app">
+        <div class="quote" id="quote">Loading wisdom...</div>
+        <hr>
+        <div class="author" id="author"></div>
+    </div>
+
+    <script>
+        async function fetchQuote() {
+            // 1. SETTINGS
+            const SCRIPT_URL = "YOUR_DEPLOYED_WEB_APP_URL"; // Paste your /exec URL here
+            const params = new URLSearchParams(window.location.search);
+            
+            // 2. APPLY THEME (Colors argument)
+            if (params.get('colors') === 'yes') document.body.classList.add('dark-mode');
+
+            // 3. FETCH DATA
+            try {
+                const response = await fetch(`${SCRIPT_URL}?${params.toString()}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('quote').innerHTML = `<span class="error">${data.error}</span>`;
+                } else {
+                    // Format quote with line breaks on punctuation
+                    const formatted = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
+                    document.getElementById('quote').innerHTML = formatted;
+                    document.getElementById('author').innerText = "— " + data.author;
+                }
+            } catch (err) {
+                document.getElementById('quote').innerText = "Connection Error. Please check your password or deployment.";
+            }
+        }
+        fetchQuote();
+    </script>
 </body>
 </html>
