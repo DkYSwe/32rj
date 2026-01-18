@@ -2,48 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Wisdom Loader</title>
+    <title>Wisdom Update 2026</title>
     <script>
-        // AGGRESSIVE PRE-RENDER KILLER (Runs before body exists)
+        // AGGRESSIVE CACHE & RENDER KILLER
         const urlParams = new URLSearchParams(window.location.search);
-        const gui = (urlParams.get('gui') || 'no').toLowerCase();
-        
-        if (gui === 'no' || urlParams.has('help')) {
-            window.stop(); // Stop browser from rendering current HTML
-            document.documentElement.innerHTML = ""; // Wipe everything immediately
+        const guiMode = (urlParams.get('gui') || 'no').toLowerCase();
+        if (guiMode === 'no' || urlParams.has('help')) {
+            window.stop(); // Stops browser from drawing initial HTML
+            document.documentElement.innerHTML = ""; 
         }
     </script>
+    <style>
+        :root { --bg: #ffffff; --card: #ffffff; --text: #1a1a1a; --line: rgba(0,0,0,0.1); }
+        .color-mode { --bg: #f5f5ed; --card: #e8e8df; --text: #2c2c2c; --line: rgba(0,0,0,0.15); }
+        body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: var(--bg); font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+        .card { width: 85%; max-width: 650px; padding: 40px; background: var(--card); border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); color: var(--text); }
+        .quote { font-size: clamp(1.2rem, 3.8vh, 2.3rem); line-height: 1.5; font-weight: 500; }
+        hr { border: 0; border-top: 1px solid var(--line); margin: 25px auto; width: 35%; }
+        .author { font-size: 1.1rem; color: #666; font-style: italic; }
+    </style>
 </head>
-<body style="margin:0; font-family:sans-serif;">
-    <div id="app" style="text-align:center; padding:50px;">Loading wisdom...</div>
+<body>
+    <div class="card" id="app">
+        <div class="quote" id="quote">Loading wisdom...</div>
+        <div id="gui-elements"><hr><div class="author" id="author"></div></div>
+    </div>
 
     <script>
         async function fetchQuote() {
             const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP9WYlCEs0-QyPJ0zdEUDEdlRT3meGiTfmPl_kTwxBFzlecz1eZOuxBJxKyIe9h08akg/exec";
             const params = new URLSearchParams(window.location.search);
-            
-            // AGGRESSIVE CACHE BUSTING
-            params.set('t', Date.now()); 
+            params.set('t', Date.now()); // Aggressive cache busting
 
             try {
-                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { 
-                    cache: "no-store",
-                    redirect: 'follow' 
-                });
+                const res = await fetch(`${SCRIPT_URL}?${params.toString()}`, { redirect: 'follow' });
 
-                if (gui === 'no' || params.has('help')) {
+                if (guiMode === 'no' || params.has('help')) {
                     const text = await res.text();
-                    // DESTRUCTIVE REPLACE
                     document.open();
-                    document.write(text);
+                    // Preserves \n formatting from backend exactly
+                    document.write(`<pre style="font-family:monospace; white-space:pre-wrap; padding:20px; font-size:1.2rem; line-height:1.6;">${text}</pre>`);
                     document.close();
                 } else {
                     const data = await res.json();
-                    document.getElementById('app').innerText = data.quote;
-                    // Additional GUI styling would go here...
+                    if (params.get('colors') === 'yes') document.body.classList.add('color-mode');
+                    if (params.get('author') === 'no') document.getElementById('gui-elements').style.display = 'none';
+
+                    document.getElementById('quote').innerHTML = data.quote.replace(/([,.;!?])\s*/g, '$1<br>');
+                    if (data.author) document.getElementById('author').innerText = "— " + data.author;
                 }
             } catch (err) {
-                console.error(err);
+                if (guiMode !== 'no') document.getElementById('quote').innerText = "Connection Error.";
             }
         }
         fetchQuote();
